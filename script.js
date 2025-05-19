@@ -1,3 +1,15 @@
+function toggleConfigInfo() {
+    const configInfo = document.getElementById('configInfo');
+    const isVisible = window.getComputedStyle(configInfo).display !== 'none';
+    configInfo.style.display = isVisible ? 'none' : 'block';
+}
+
+function toggleInfo() {
+    const infoContent = document.getElementById('infoContent');
+    const isVisible = window.getComputedStyle(infoContent).display !== 'none';
+    infoContent.style.display = isVisible ? 'none' : 'block';
+}
+
 let baseUrl = "https://services.sentinel-hub.com/ogc/wmts/";
 let map = null;
 let xyzLayer = null;
@@ -117,7 +129,7 @@ function getLayers() {
                 layerInfoDiv.appendChild(labelDiv);
             }
 
-            layers.forEach(layer => {
+            layers.forEach((layer, index) => {
                 const title = layer.querySelector('Title').textContent;
                 const abstract = layer.querySelector('Abstract').textContent;
                 const identifier = layer.querySelector('Identifier').textContent;
@@ -133,6 +145,11 @@ function getLayers() {
                     selectLayer(layerDiv, layer);
                 };
                 layerInfoDiv.appendChild(layerDiv);
+
+                // Auto-select if there's only one layer
+                if (layers.length === 1) {
+                    selectLayer(layerDiv, layer);
+                }
             });
         })
         .catch(error => {
@@ -273,17 +290,17 @@ function updateLibraryOptions() {
     const lib = mapLibrarySelect.value;
     let html = '';
     // Layer selector and opacity control for all libraries
-    html += `<label><input type=\"checkbox\" id=\"layerSelector\" checked> Layer selector</label> `;
-    html += `<label><input type=\"checkbox\" id=\"opacityControl\"> Opacity control</label> `;
+    html += `<label><input type="checkbox" id="layerSelector" checked> Layer selector</label> `;
+    html += `<label><input type="checkbox" id="opacityControl"> Opacity control</label> `;
     // Measure tool for all libraries
-    html += `<label><input type=\"checkbox\" id=\"measureTool\"> Measure tool</label>`;
-    html += `<div id=\"measureSubOptions\"></div>`;
+    html += `<label><input type="checkbox" id="measureTool"> Measure tool</label>`;
+    html += `<div id="measureSubOptions"></div>`;
     if (lib === 'OpenLayers') {
-        html += `<label><input type=\"checkbox\" id=\"olPermalink\" checked> Shareable URL</label> `;
+        html += `<label><input type="checkbox" id="olPermalink" checked> Shareable URL</label> `;
     } else if (lib === 'MapLibre') {
-        html += `<label><input type=\"checkbox\" id=\"ml3d\"> 3D</label>`;
+        html += `<label><input type="checkbox" id="ml3d"> 3D</label>`;
     } else {
-        html += '<span style=\"color:#64748b;\">No extra options for Leaflet.</span>';
+        html += '<span style="color:#64748b;">No extra options for Leaflet.</span>';
     }
     libraryOptionsDiv.innerHTML = html;
     // Add event for measure tool to show/hide sub-options

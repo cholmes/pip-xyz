@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Layer Information and URL Generator</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
@@ -12,8 +12,21 @@
 </head>
 <body>
     <div class="container">
+        <h1 class="app-title">Planet Insights Platform Web Map Helper App</h1>
+        <div class="info-section">
+            <button class="info-toggle" onclick="toggleInfo()" title="About"><i class="fa-solid fa-circle-info"></i> About</button>
+            <div class="info-content" id="infoContent">
+                <p>This application aims to help users of <a href="https://insights.planet.com" target="_blank">Planet Insights Platform</a> to create web map applications. If you have an Insights Platform account you can paste in a configuration id and the app will return a preview web map, the center & zoom, and an XYZ url template. The XYZ url is often the easiest way to make a web map, but the Insights Platform doesn't (yet) make it easy to figure out what it should be. There is also an experimental feature to generate prompts for AI tools to generate code to make web maps.</p>
+            </div>
+        </div>
         <div class="input-group">
-            <label for="id">Planet Insights Platform Configuration ID:</label>
+            <div class="input-header">
+                <label for="id">Configuration ID</label>
+                <button class="info-icon" onclick="toggleConfigInfo()" title="About Configuration ID"><i class="fa-solid fa-circle-info"></i></button>
+            </div>
+            <div class="info-tooltip" id="configInfo">
+                <p>You can find the ID for your configuration on the <a href="https://insights.planet.com/analyze/configurations/" target="_blank">configurations page</a>. Just copy the ID and paste it in below. The ID should look like 'd410e654-397f-4734-a1dc-f3abe3e5bae5'</p>
+            </div>
             <input type="text" id="id" placeholder="Enter ID" oninput="getLayers()">
         </div>
         <div id="configNameLabel" class="config-name-label" style="display:none;">Configuration Name</div>
@@ -55,7 +68,7 @@
     </div>
 
     <div class="settings" id="settings">
-        <div class="settings-toggle" onclick="toggleSettings()">⚙️</div>
+        <div class="settings-toggle" onclick="toggleSettings()"><i class="fa-solid fa-gear"></i></div>
         <div class="settings-content">
             <label>Select Service:</label>
             <label><input type="radio" name="service" value="services" checked onchange="updateBaseUrl()"> services</label>
