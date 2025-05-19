@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layer Information and URL Generator</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <div class="container">
+        <div class="input-group">
+            <label for="id">Planet Insights Platform Configuration ID:</label>
+            <input type="text" id="id" placeholder="Enter ID" oninput="getLayers()">
+        </div>
+        <div id="configNameLabel" class="config-name-label" style="display:none;">Configuration Name</div>
+        <div id="serviceTitle" class="service-title"></div>
+        <div id="layerHint" class="layer-hint" style="display:none;"></div>
+        <div class="layer-info" id="layerInfo"></div>
+        <div id="map" class="map-container"></div>
+        <div id="layerCoordinates" class="layer-coordinates"></div>
+        <div id="xyzTemplate" class="xyz-template"></div>
+        <div id="generatedUrls" class="generated-urls"></div>
+        <div id="aiPromptBuilder" class="ai-prompt-builder" style="display:none;">
+            <h2>AI Code Generation Prompt Builder</h2>
+            <div class="ai-options">
+                <div class="ai-option-group">
+                    <label for="mapLibrary">Map library:</label>
+                    <select id="mapLibrary">
+                        <option value="OpenLayers">OpenLayers</option>
+                        <option value="MapLibre">MapLibre</option>
+                        <option value="Leaflet">Leaflet</option>
+                    </select>
+                </div>
+                <div class="ai-option-group">
+                    <label for="baseLayer">Base layer:</label>
+                    <select id="baseLayer">
+                        <option value="OpenStreetMap">OpenStreetMap</option>
+                        <option value="Carto Dark">Carto Dark</option>
+                        <option value="Carto Light" selected>Carto Light</option>
+                        <option value="Sentinel-2 Cloudless">Sentinel-2 Cloudless</option>
+                    </select>
+                </div>
+            </div>
+            <div id="librarySpecificOptions" class="ai-library-options"></div>
+            <label for="aiPromptText" class="ai-prompt-label">Prompt:</label>
+            <div class="ai-prompt-row">
+                <textarea id="aiPromptText" class="ai-prompt-text" rows="6" readonly></textarea>
+                <button id="copyPromptBtn" class="copy-btn" title="Copy prompt" style="align-self: flex-start; margin-left: 8px; margin-top: 2px;"><i class="fa-solid fa-copy"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings" id="settings">
+        <div class="settings-toggle" onclick="toggleSettings()">⚙️</div>
+        <div class="settings-content">
+            <label>Select Service:</label>
+            <label><input type="radio" name="service" value="services" checked onchange="updateBaseUrl()"> services</label>
+            <label><input type="radio" name="service" value="us-west" onchange="updateBaseUrl()"> us-west</label>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
