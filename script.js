@@ -332,6 +332,7 @@ function updateLibraryOptions() {
     // Layer selector and opacity control for all libraries
     html += `<label><input type="checkbox" id="layerSelector" checked> Layer selector</label> `;
     html += `<label><input type="checkbox" id="opacityControl"> Opacity control</label> `;
+    html += `<label><input type="checkbox" id="displayScale"> Display scale</label> `;
     // Measure tool for all libraries
     html += `<label><input type="checkbox" id="measureTool"> Measure tool</label>`;
     html += `<div id="measureSubOptions"></div>`;
@@ -377,6 +378,7 @@ function getPromptText() {
     }
     if (document.getElementById('layerSelector')?.checked) opts.push('a layer selector');
     if (document.getElementById('opacityControl')?.checked) opts.push('an opacity control');
+    if (document.getElementById('displayScale')?.checked) opts.push('a scale control');
     if (document.getElementById('measureTool')?.checked) {
         let measureTypes = [];
         if (document.getElementById('measurePolygon')?.checked) measureTypes.push('polygon');
@@ -399,6 +401,9 @@ function getPromptText() {
         prompt += '\n\nUse https://cdn.jsdelivr.net/npm/ol@v9.2.4/dist/ol.js to use OpenLayers version 9.2.4 for the OpenLayers library.';
         prompt += '\nUse the classic OpenLayers setup with <script src=".../ol.js"> and avoid ES modules or type="module" and avoid ol.control.defaults — explicitly list the controls in an array and don\'t rely on the defaults().extend() pattern.';
         prompt += '\nPlace controls in specific locations: attribution in the lower right corner, zoom in the upper left, and all other controls non-overlapping in the upper right.';
+        if (document.getElementById('displayScale')?.checked) {
+            prompt += '\nUse the ScaleLine control for displaying the map scale.';
+        }
     }
     if (base === 'Sentinel-2 Cloudless') {
         prompt += '\n\nUse https://tiles.maps.eox.at/wmts?layer=s2cloudless-2024_3857&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={z}&TileCol={x}&TileRow={y} as the XYZ url template for the Sentinel-2 Cloudless base layer.';
