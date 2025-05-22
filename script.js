@@ -353,7 +353,11 @@ function getPromptText() {
     if (opts.length) {
         optStr += (permalinkText ? ' and ' : ' with ') + opts.join(' and ');
     }
-    return `Generate the code for a ${lib} map with an XYZ template of ${xyz} centered at ${center} at zoom level ${zoom} using ${base} as the base layer${optStr}.`;
+    let prompt = `Generate the code for a ${lib} map with an XYZ template of ${xyz} centered at ${center} at zoom level ${zoom} using ${base} as the base layer${optStr}.`;
+    if (lib === 'OpenLayers') {
+        prompt += '\n\nUse https://cdn.jsdelivr.net/npm/ol@v10.5.0/dist/ol.js for the OpenLayers library.';
+    }
+    return prompt;
 }
 
 function updatePrompt() {
