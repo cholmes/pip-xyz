@@ -365,6 +365,7 @@ function updateLibraryOptions() {
         html += '<span style="color:#64748b;">No extra options for Leaflet.</span>';
     }
     libraryOptionsDiv.innerHTML = html;
+
     // Add event for measure tool to show/hide sub-options
     const measureTool = document.getElementById('measureTool');
     const measureSubOptions = document.getElementById('measureSubOptions');
@@ -381,6 +382,23 @@ function updateLibraryOptions() {
     }
     measureTool.addEventListener('change', updateMeasureSubOptions);
     updateMeasureSubOptions();
+
+    // Opacity control logic
+    const layerSelector = document.getElementById('layerSelector');
+    const opacityControl = document.getElementById('opacityControl');
+    function updateOpacityControlState() {
+        if (!layerSelector.checked) {
+            opacityControl.checked = false;
+            opacityControl.disabled = true;
+        } else {
+            opacityControl.disabled = false;
+        }
+        updatePrompt();
+    }
+    layerSelector.addEventListener('change', updateOpacityControlState);
+    opacityControl.addEventListener('change', updatePrompt);
+    // Set initial state
+    updateOpacityControlState();
 }
 
 function getPromptText() {
@@ -389,35 +407,49 @@ function getPromptText() {
     const xyz = aiSelectedLayerData.xyz;
     const center = aiSelectedLayerData.center;
     const zoom = aiSelectedLayerData.zoom;
-    const layerName = document.querySelector('.layer.selected .layer-title')?.textContent || '';
-    let opts = [];
+    let bullets = [];
     let permalinkText = '';
+    const layerSelector = document.getElementById('layerSelector');
+    const opacityControl = document.getElementById('opacityControl');
     if (lib === 'OpenLayers') {
-        if (document.getElementById('olPermalink')?.checked) permalinkText = 'with an auto-updating url hash for the map state and 4 significant digits for the zoom';
+        if (document.getElementById('olPermalink')?.checked) permalinkText = 'with an auto-updating url hash for the map state';
     } else if (lib === 'MapLibre') {
-        if (document.getElementById('ml3d')?.checked) opts.push('3D support');
+        if (document.getElementById('ml3d')?.checked) bullets.push('3D support');
     }
-    if (document.getElementById('layerSelector')?.checked) opts.push('a layer selector');
-    if (document.getElementById('opacityControl')?.checked) opts.push('an opacity control');
-    if (document.getElementById('displayScale')?.checked) opts.push('a scale control');
+    // Layer selector and opacity control bullet
+    if (layerSelector && layerSelector.checked) {
+        if (opacityControl && opacityControl.checked) {
+            bullets.push('a layer selector that has an opacity slider for the overlay, integrated in the layer selector container');
+        } else {
+            bullets.push('a layer selector');
+        }
+    } else {
+        bullets.push('no layer selector');
+    }
+    // Measure tool bullet
     if (document.getElementById('measureTool')?.checked) {
         let measureTypes = [];
         if (document.getElementById('measurePolygon')?.checked) measureTypes.push('polygon');
         if (document.getElementById('measureLine')?.checked) measureTypes.push('line');
         if (measureTypes.length) {
-            opts.push(`a measure tool (${measureTypes.join(' and ')})`);
+            bullets.push(`a measure tool (${measureTypes.join(' and ')})`);
         } else {
-            opts.push('a measure tool');
+            bullets.push('a measure tool');
         }
     }
-    let optStr = '';
+    // Scale control bullet
+    if (document.getElementById('displayScale')?.checked) {
+        bullets.push('a scale control');
+    }
+    // Permalink bullet (for OpenLayers)
     if (permalinkText) {
-        optStr += ` ${permalinkText}`;
+        bullets.push(permalinkText);
     }
-    if (opts.length) {
-        optStr += (permalinkText ? ' and ' : ' with ') + opts.join(' and ');
+    let prompt = `Generate the code for a ${lib} map with an XYZ template of ${xyz} centered at ${center} at zoom level ${zoom} using ${base} as the base layer.`;
+    if (bullets.length) {
+        prompt += `\n\nPlease create the application with:\n`;
+        prompt += bullets.map(b => `* ${b}`).join('\n');
     }
-    let prompt = `Generate the code for a ${lib} map with an XYZ template of ${xyz} and a layer name of "${layerName}" centered at ${center} at zoom level ${zoom} using ${base} as the base layer${optStr}.`;
     if (lib === 'OpenLayers') {
         prompt += '\n\nUse https://cdn.jsdelivr.net/npm/ol@v9.2.4/dist/ol.js to use OpenLayers version 9.2.4 for the OpenLayers library.';
         prompt += '\nUse the classic OpenLayers setup with <script src=".../ol.js"> and avoid ES modules or type="module" and avoid ol.control.defaults — explicitly list the controls in an array and don\'t rely on the defaults().extend() pattern.';
@@ -426,9 +458,8 @@ function getPromptText() {
             prompt += '\nUse the ScaleLine control for displaying the map scale.';
         }
     }
-    if (base === 'Sentinel-2 Cloudless') {
-        prompt += '\n\nUse https://tiles.maps.eox.at/wmts?layer=s2cloudless-2024_3857&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={z}&TileCol={x}&TileRow={y} as the XYZ url template for the Sentinel-2 Cloudless base layer.';
-        prompt += '\n\nAdd proper attribution to the map and make sure it is visible by default in the bottom corner. Use \'<a href="https://s2maps.eu" target="_blank">Sentinel-2 cloudless</a> by <a href="https://eox.at" target="_blank">EOX IT Services GmbH</a> (Contains modified Copernicus Sentinel data 2024)\' for the attribution.';
+    if (lib === 'Leaflet') {
+        prompt += '\n\nGive me code with external resources, but leave out all integrity and crossorigin attributes.';
     }
     return prompt;
 }
