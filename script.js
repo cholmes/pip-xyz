@@ -396,12 +396,13 @@ function getPromptText() {
     }
     let prompt = `Generate the code for a ${lib} map with an XYZ template of ${xyz} and a layer name of "${layerName}" centered at ${center} at zoom level ${zoom} using ${base} as the base layer${optStr}.`;
     if (lib === 'OpenLayers') {
-        prompt += '\n\nUse https://cdn.jsdelivr.net/npm/ol@v9.2.4/dist/ol.js for the OpenLayers library.';
-        prompt += '\nUse the classic OpenLayers setup with <script src=".../ol.js"> and avoid ES modules or type="module".';
-        prompt += '\nAssume OpenLayers 10+ via <script src> and not using ol. namespace — use olMap, olView, olLayerTile, etc.';
+        prompt += '\n\nUse https://cdn.jsdelivr.net/npm/ol@v9.2.4/dist/ol.js to use OpenLayers version 9.2.4 for the OpenLayers library.';
+        prompt += '\nUse the classic OpenLayers setup with <script src=".../ol.js"> and avoid ES modules or type="module" and avoid ol.control.defaults — explicitly list the controls in an array and don\'t rely on the defaults().extend() pattern.';
+        prompt += '\nPlace controls in specific locations: attribution in the lower right corner, zoom in the upper left, and all other controls non-overlapping in the upper right.';
     }
     if (base === 'Sentinel-2 Cloudless') {
         prompt += '\n\nUse https://tiles.maps.eox.at/wmts?layer=s2cloudless-2024_3857&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={z}&TileCol={x}&TileRow={y} as the XYZ url template for the Sentinel-2 Cloudless base layer.';
+        prompt += '\n\nAdd proper attribution to the map and make sure it is visible by default in the bottom corner. Use \'<a href="https://s2maps.eu" target="_blank">Sentinel-2 cloudless</a> by <a href="https://eox.at" target="_blank">EOX IT Services GmbH</a> (Contains modified Copernicus Sentinel data 2024)\' for the attribution.';
     }
     return prompt;
 }
