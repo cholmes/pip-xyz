@@ -288,6 +288,27 @@ function initMap(center, zoom, xyzUrl) {
             zoom: zoom
         })
     });
+
+    // Add expand control
+    const expandControl = document.createElement('div');
+    expandControl.className = 'map-expand-control';
+    expandControl.innerHTML = '<i class="fa-solid fa-expand"></i>';
+    expandControl.title = 'Expand/Collapse Map';
+    expandControl.addEventListener('click', function() {
+        if (mapContainer.classList.contains('expanded')) {
+            mapContainer.classList.remove('expanded');
+            expandControl.innerHTML = '<i class="fa-solid fa-expand"></i>';
+        } else {
+            mapContainer.classList.add('expanded');
+            expandControl.innerHTML = '<i class="fa-solid fa-compress"></i>';
+        }
+        // Update map size after expanding/collapsing
+        setTimeout(() => {
+            map.updateSize();
+        }, 300); // Match the CSS transition duration
+    });
+
+    map.getViewport().appendChild(expandControl);
 }
 
 function copyToClipboard(value) {
