@@ -363,35 +363,16 @@ function updateLibraryOptions() {
     // Layer selector and opacity control for all libraries
     html += `<label><input type="checkbox" id="layerSelector" checked> Layer selector</label> `;
     html += `<label><input type="checkbox" id="opacityControl"> Opacity control</label> `;
-    html += `<label><input type="checkbox" id="displayScale"> Display scale</label> `;
-    // Measure tool for all libraries
-    html += `<label><input type="checkbox" id="measureTool"> Measure tool</label>`;
-    html += `<div id="measureSubOptions"></div>`;
+    
     if (lib === 'OpenLayers') {
         html += `<label><input type="checkbox" id="olPermalink" checked> Shareable URL</label> `;
+        html += `<label><input type="checkbox" id="displayScale"> Scale control</label> `;
     } else if (lib === 'MapLibre') {
         html += `<label><input type="checkbox" id="ml3d"> 3D</label>`;
     } else {
         html += '<span style="color:#64748b;">No extra options for Leaflet.</span>';
     }
     libraryOptionsDiv.innerHTML = html;
-
-    // Add event for measure tool to show/hide sub-options
-    const measureTool = document.getElementById('measureTool');
-    const measureSubOptions = document.getElementById('measureSubOptions');
-    function updateMeasureSubOptions() {
-        if (measureTool.checked) {
-            measureSubOptions.innerHTML = `<div class=\"measure-suboptions\"><label><input type=\"checkbox\" id=\"measurePolygon\" checked> Polygon</label><label><input type=\"checkbox\" id=\"measureLine\" checked> Line</label></div>`;
-        } else {
-            measureSubOptions.innerHTML = '';
-        }
-        // Add listeners for sub-options
-        document.getElementById('measurePolygon')?.addEventListener('change', updatePrompt);
-        document.getElementById('measureLine')?.addEventListener('change', updatePrompt);
-        updatePrompt();
-    }
-    measureTool.addEventListener('change', updateMeasureSubOptions);
-    updateMeasureSubOptions();
 
     // Opacity control logic
     const layerSelector = document.getElementById('layerSelector');
@@ -407,6 +388,12 @@ function updateLibraryOptions() {
     }
     layerSelector.addEventListener('change', updateOpacityControlState);
     opacityControl.addEventListener('change', updatePrompt);
+    
+    // Add change listeners for other checkboxes
+    document.getElementById('olPermalink')?.addEventListener('change', updatePrompt);
+    document.getElementById('displayScale')?.addEventListener('change', updatePrompt);
+    document.getElementById('ml3d')?.addEventListener('change', updatePrompt);
+    
     // Set initial state
     updateOpacityControlState();
 }
@@ -446,17 +433,6 @@ function getPromptText() {
         bullets.push('no layer selector');
     }
     
-    if (document.getElementById('measureTool')?.checked) {
-        let measureTypes = [];
-        if (document.getElementById('measurePolygon')?.checked) measureTypes.push('polygon');
-        if (document.getElementById('measureLine')?.checked) measureTypes.push('line');
-        if (measureTypes.length) {
-            bullets.push(`a measure tool (${measureTypes.join(' and ')})`);
-        } else {
-            bullets.push('a measure tool');
-        }
-    }
-    
     if (document.getElementById('displayScale')?.checked) {
         bullets.push('a scale control');
     }
@@ -470,10 +446,11 @@ function getPromptText() {
         prompt += `\n\nPlease create the application with:\n`;
         prompt += bullets.map(b => `* ${b}`).join('\n');
     }
+    
     if (lib === 'OpenLayers') {
         prompt += '\n\nUse https://cdn.jsdelivr.net/npm/ol@v9.2.4/dist/ol.js to use OpenLayers version 9.2.4 for the OpenLayers library.';
         prompt += '\nUse the classic OpenLayers setup with <script src=".../ol.js"> and avoid ES modules or type="module" and avoid ol.control.defaults — explicitly list the controls in an array and don\'t rely on the defaults().extend() pattern.';
-        prompt += '\nPlace controls in specific locations: attribution in the lower right corner, zoom in the upper left, and all other controls non-overlapping in the upper right.';
+        prompt += '\nUse explicit control positioning: zoom in top-left, attribution in bottom-right, custom controls (like layer selectors) in top-right, vertically spaced so they do not overlap with zoom or each other. Use ol-control CSS classes correctly and apply manual spacing as needed.';
         if (document.getElementById('displayScale')?.checked) {
             prompt += '\nUse the ScaleLine control for displaying the map scale.';
         }
@@ -481,11 +458,6 @@ function getPromptText() {
     if (lib === 'Leaflet') {
         prompt += '\n\nGive me code with external resources, but leave out all integrity and crossorigin attributes.';
     }
-    if (base === 'Sentinel-2 Cloudless') {
-        prompt += '\n\nUse https://tiles.maps.eox.at/wmts?layer=s2cloudless-2024_3857&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={z}&TileCol={x}&TileRow={y} as the XYZ url template for the Sentinel-2 Cloudless base layer.';
-        prompt += '\n\nAdd proper attribution to the map and make sure it is visible by default in the bottom corner. Use \'<a href="https://s2maps.eu" target="_blank">Sentinel-2 cloudless</a> by <a href="https://eox.at" target="_blank">EOX IT Services GmbH</a> (Contains modified Copernicus Sentinel data 2024)\' for the attribution.';
-    }
-
     return prompt;
 }
 
