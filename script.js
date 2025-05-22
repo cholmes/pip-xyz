@@ -58,8 +58,10 @@ function generateUrl(identifier) {
     return fullUrl;
 }
 
-function getLayers() {
-    const id = document.getElementById('id').value.trim();
+function getLayers(configId, layerTitleFromHash = null) {
+    const idInput = document.getElementById('id');
+    // If configId is not provided, use the input field's value
+    const currentId = configId || idInput.value.trim();
 
     const serviceTitleDiv = document.getElementById('serviceTitle');
     const layerInfoDiv = document.getElementById('layerInfo');
@@ -80,14 +82,26 @@ function getLayers() {
         map = null;
     }
 
-    if (!id) {
+    if (!currentId) {
         layerInfoDiv.innerHTML = 'Please enter an ID.';
+        if (window.location.hash) { // Clear hash only if it was set
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
         return;
     }
 
+    // Only update hash if layerTitleFromHash is not provided (i.e., user typed ID)
+    // Or if the hash doesn't already reflect the currentId and potential layer
+    const currentHash = window.location.hash.substring(1);
+    const expectedHashBase = `id/${currentId}`;
+    if (!layerTitleFromHash && !currentHash.startsWith(expectedHashBase)) {
+         window.history.replaceState(null, '', `#${expectedHashBase}`);
+    }
+
+
     layerInfoDiv.innerHTML = '<p class="loading">Loading...</p>';
 
-    const url = `${baseUrl}${id}?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetCapabilities`;
+    const url = `${baseUrl}${currentId}?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetCapabilities`;
 
     fetch(url)
         .then(response => response.text())
@@ -112,7 +126,6 @@ function getLayers() {
             const layers = xmlDoc.querySelectorAll('Layer');
             layerInfoDiv.innerHTML = '';
 
-            // Show the layer hint if there are layers
             const layerHintDiv = document.getElementById('layerHint');
             if (layers.length > 0) {
                 layerHintDiv.textContent = 'Click on a layer for more information';
@@ -121,7 +134,6 @@ function getLayers() {
                 layerHintDiv.style.display = 'none';
             }
 
-            // Only show the label if there are layers
             if (layers.length > 0) {
                 const labelDiv = document.createElement('div');
                 labelDiv.className = 'layer-list-label';
@@ -129,58 +141,86 @@ function getLayers() {
                 layerInfoDiv.appendChild(labelDiv);
             }
 
-            layers.forEach((layer, index) => {
+            const layersArray = Array.from(layers);
+
+            layersArray.forEach((layer) => {
                 const title = layer.querySelector('Title').textContent;
                 const abstract = layer.querySelector('Abstract').textContent;
-                const identifier = layer.querySelector('Identifier').textContent;
+                // const identifier = layer.querySelector('Identifier').textContent;
 
                 const layerDiv = document.createElement('div');
                 layerDiv.className = 'layer';
                 if (title === abstract) {
-                    layerDiv.innerHTML = `<div class=\"layer-title\">${title}</div>`;
+                    layerDiv.innerHTML = `<div class="layer-title">${title}</div>`;
                 } else {
-                    layerDiv.innerHTML = `<div class=\"layer-title\">${title}</div><div class=\"layer-abstract\">${abstract}</div>`;
+                    layerDiv.innerHTML = `<div class="layer-title">${title}</div><div class="layer-abstract">${abstract}</div>`;
                 }
                 layerDiv.onclick = function() {
-                    selectLayer(layerDiv, layer);
+                    selectLayer(layerDiv, layer, currentId);
                 };
                 layerInfoDiv.appendChild(layerDiv);
-
-                // Auto-select if there's only one layer
-                if (layers.length === 1) {
-                    selectLayer(layerDiv, layer);
-                }
             });
+            
+            let layerSelectedBasedOnHash = false;
+            if (layerTitleFromHash) {
+                const decodedLayerTitle = decodeURIComponent(layerTitleFromHash);
+                const layerToSelect = layersArray.find(layer => 
+                    layer.querySelector('Title').textContent === decodedLayerTitle
+                );
+                if (layerToSelect) {
+                    const layerDivs = layerInfoDiv.querySelectorAll('.layer');
+                    for (const div of layerDivs) {
+                        if (div.querySelector('.layer-title').textContent === decodedLayerTitle) {
+                            selectLayer(div, layerToSelect, currentId);
+                            layerSelectedBasedOnHash = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (!layerSelectedBasedOnHash && layersArray.length === 1) {
+                const firstLayerDiv = layerInfoDiv.querySelector('.layer');
+                if (firstLayerDiv) {
+                    selectLayer(firstLayerDiv, layersArray[0], currentId);
+                }
+            }
         })
         .catch(error => {
             console.error('Error fetching or parsing:', error);
             layerInfoDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            // Clear hash on error if it was for this ID
+            if (window.location.hash.includes(`id/${currentId}`)) {
+                 window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
         });
 }
 
-function selectLayer(layerDiv, layer) {
+function selectLayer(layerDiv, layer, currentConfigId) {
     const previousSelectedLayer = document.querySelector('.layer.selected');
     if (previousSelectedLayer) {
         previousSelectedLayer.classList.remove('selected');
     }
     layerDiv.classList.add('selected');
-    // Hide the layer hint
     document.getElementById('layerHint').style.display = 'none';
     displayLayerCoordinates(layer);
     displayXYZTemplate(layer);
-    // Update AI prompt builder values
+    
     const centerAndZoom = calculateCenterAndZoom(layer);
-    const identifier = layer.querySelector('Identifier').textContent;
-    const id = document.getElementById('id').value.trim();
-    const xyzUrl = getXYZUrl(id, identifier);
+    // const identifier = layer.querySelector('Identifier').textContent; // Not used directly in aiSelectedLayerData
+    const idForXYZ = document.getElementById('id').value.trim(); // Use current input value for XYZ
+    const xyzUrl = getXYZUrl(idForXYZ, layer.querySelector('Identifier').textContent);
     aiSelectedLayerData = {
         xyz: xyzUrl,
         center: `${centerAndZoom.lon.toFixed(6)}, ${centerAndZoom.lat.toFixed(6)}`,
         zoom: `${centerAndZoom.zoom}`
     };
     updatePrompt();
-    // Show the AI prompt builder section
     document.getElementById('aiPromptBuilder').style.display = 'block';
+
+    const layerTitle = layer.querySelector('Title').textContent;
+    const encodedLayerTitle = encodeURIComponent(layerTitle);
+    window.history.replaceState(null, '', `#id/${currentConfigId}/layer/${encodedLayerTitle}`);
 }
 
 function lonLatToXY(lon, lat) {
@@ -327,10 +367,11 @@ function getPromptText() {
     const xyz = aiSelectedLayerData.xyz;
     const center = aiSelectedLayerData.center;
     const zoom = aiSelectedLayerData.zoom;
+    const layerName = document.querySelector('.layer.selected .layer-title')?.textContent || '';
     let opts = [];
     let permalinkText = '';
     if (lib === 'OpenLayers') {
-        if (document.getElementById('olPermalink')?.checked) permalinkText = 'with an auto-updating url hash for the map state';
+        if (document.getElementById('olPermalink')?.checked) permalinkText = 'with an auto-updating url hash for the map state and 4 significant digits for the zoom';
     } else if (lib === 'MapLibre') {
         if (document.getElementById('ml3d')?.checked) opts.push('3D support');
     }
@@ -353,9 +394,14 @@ function getPromptText() {
     if (opts.length) {
         optStr += (permalinkText ? ' and ' : ' with ') + opts.join(' and ');
     }
-    let prompt = `Generate the code for a ${lib} map with an XYZ template of ${xyz} centered at ${center} at zoom level ${zoom} using ${base} as the base layer${optStr}.`;
+    let prompt = `Generate the code for a ${lib} map with an XYZ template of ${xyz} and a layer name of "${layerName}" centered at ${center} at zoom level ${zoom} using ${base} as the base layer${optStr}.`;
     if (lib === 'OpenLayers') {
-        prompt += '\n\nUse https://cdn.jsdelivr.net/npm/ol@v10.5.0/dist/ol.js for the OpenLayers library.';
+        prompt += '\n\nUse https://cdn.jsdelivr.net/npm/ol@v9.2.4/dist/ol.js for the OpenLayers library.';
+        prompt += '\nUse the classic OpenLayers setup with <script src=".../ol.js"> and avoid ES modules or type="module".';
+        prompt += '\nAssume OpenLayers 10+ via <script src> and not using ol. namespace — use olMap, olView, olLayerTile, etc.';
+    }
+    if (base === 'Sentinel-2 Cloudless') {
+        prompt += '\n\nUse https://tiles.maps.eox.at/wmts?layer=s2cloudless-2024_3857&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={z}&TileCol={x}&TileRow={y} as the XYZ url template for the Sentinel-2 Cloudless base layer.';
     }
     return prompt;
 }
@@ -380,4 +426,54 @@ updatePrompt();
 document.getElementById('copyPromptBtn').addEventListener('click', function() {
     const prompt = document.getElementById('aiPromptText').value;
     navigator.clipboard.writeText(prompt);
+});
+
+// Add event listener for hash changes
+window.addEventListener('hashchange', function() {
+    // Only re-process if the new hash is different from what selectLayer would set for the current state,
+    // or if the ID part is different. This is a simple check and might need refinement.
+    // For now, let's keep it simple and always re-evaluate.
+    handleHash();
+});
+
+// Check URL hash on page load
+window.addEventListener('load', function() {
+    handleHash();
+});
+
+function handleHash() {
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+        const parts = hash.split('/');
+        let idFromHash = null;
+        let layerTitleFromHash = null;
+
+        if (parts.length >= 2 && parts[0] === 'id') {
+            idFromHash = parts[1];
+        }
+        if (parts.length >= 4 && parts[2] === 'layer') {
+            layerTitleFromHash = parts[3]; // Will be decoded in getLayers
+        }
+
+        const idInput = document.getElementById('id');
+        if (idFromHash && idInput.value !== idFromHash) {
+            idInput.value = idFromHash;
+            getLayers(idFromHash, layerTitleFromHash);
+        } else if (idFromHash && !layerTitleFromHash && idInput.value === idFromHash) {
+            // ID is in hash and matches input, but no layer - likely from user typing ID
+            // getLayers was already called by oninput, or will be if user just cleared layer from hash.
+            // If we need to re-trigger layer selection based on hash without layer, it's complex.
+            // For now, assume user interaction or previous getLayers handles it.
+        } else if (idFromHash && layerTitleFromHash && idInput.value === idFromHash) {
+             // ID in input matches hash, and there's a layer in hash.
+             // This case is to ensure layer selection happens if hash was manually changed to add a layer
+             // or if initial load had both.
+            getLayers(idFromHash, layerTitleFromHash);
+        }
+    }
+}
+
+// Initial setup for existing elements like the ID input
+document.getElementById('id').addEventListener('input', function() {
+    getLayers(this.value.trim(), null); // Pass null for layerTitleFromHash
 });
