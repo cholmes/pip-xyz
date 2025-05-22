@@ -19,11 +19,13 @@ const mapLibrarySelect = document.getElementById('mapLibrary');
 const baseLayerSelect = document.getElementById('baseLayer');
 const libraryOptionsDiv = document.getElementById('librarySpecificOptions');
 const aiPromptText = document.getElementById('aiPromptText');
+const layerNameInput = document.getElementById('layerName');
 
 let aiSelectedLayerData = {
     xyz: 'https://services.sentinel-hub.com/ogc/wmts/e584849a-8729-4a4f-ab35-be5120a10e3b?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=3_NDVI&STYLE=default&FORMAT=image%2Fpng&TILEMATRIXSET=PopularWebMercator256&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
     center: '-123.138018, 48.130306',
-    zoom: '13'
+    zoom: '13',
+    layerName: 'NDVI'
 };
 
 function toggleSettings() {
@@ -207,20 +209,28 @@ function selectLayer(layerDiv, layer, currentConfigId) {
     displayXYZTemplate(layer);
     
     const centerAndZoom = calculateCenterAndZoom(layer);
-    // const identifier = layer.querySelector('Identifier').textContent; // Not used directly in aiSelectedLayerData
+    const identifier = layer.querySelector('Identifier').textContent;
+    const title = layer.querySelector('Title').textContent;
     const idForXYZ = document.getElementById('id').value.trim(); // Use current input value for XYZ
-    const xyzUrl = getXYZUrl(idForXYZ, layer.querySelector('Identifier').textContent);
+    const xyzUrl = getXYZUrl(idForXYZ, identifier);
+    
+    if (layerNameInput) {
+        layerNameInput.value = title;
+    }
+    
     aiSelectedLayerData = {
         xyz: xyzUrl,
         center: `${centerAndZoom.lon.toFixed(6)}, ${centerAndZoom.lat.toFixed(6)}`,
-        zoom: `${centerAndZoom.zoom}`
+        zoom: `${centerAndZoom.zoom}`,
+        layerName: title
     };
-    updatePrompt();
+    
     document.getElementById('aiPromptBuilder').style.display = 'block';
-
-    const layerTitle = layer.querySelector('Title').textContent;
-    const encodedLayerTitle = encodeURIComponent(layerTitle);
+    
+    const encodedLayerTitle = encodeURIComponent(title);
     window.history.replaceState(null, '', `#id/${currentConfigId}/layer/${encodedLayerTitle}`);
+    
+    updatePrompt();
 }
 
 function lonLatToXY(lon, lat) {
@@ -407,16 +417,25 @@ function getPromptText() {
     const xyz = aiSelectedLayerData.xyz;
     const center = aiSelectedLayerData.center;
     const zoom = aiSelectedLayerData.zoom;
+    
+    let layerName = '';
+    if (layerNameInput && layerNameInput.value) {
+        layerName = layerNameInput.value;
+    } else if (aiSelectedLayerData.layerName) {
+        layerName = aiSelectedLayerData.layerName;
+    }
+    
     let bullets = [];
     let permalinkText = '';
     const layerSelector = document.getElementById('layerSelector');
     const opacityControl = document.getElementById('opacityControl');
+    
     if (lib === 'OpenLayers') {
         if (document.getElementById('olPermalink')?.checked) permalinkText = 'with an auto-updating url hash for the map state';
     } else if (lib === 'MapLibre') {
         if (document.getElementById('ml3d')?.checked) bullets.push('3D support');
     }
-    // Layer selector and opacity control bullet
+    
     if (layerSelector && layerSelector.checked) {
         if (opacityControl && opacityControl.checked) {
             bullets.push('a layer selector that has an opacity slider for the overlay, integrated in the layer selector container');
@@ -426,7 +445,7 @@ function getPromptText() {
     } else {
         bullets.push('no layer selector');
     }
-    // Measure tool bullet
+    
     if (document.getElementById('measureTool')?.checked) {
         let measureTypes = [];
         if (document.getElementById('measurePolygon')?.checked) measureTypes.push('polygon');
@@ -437,15 +456,16 @@ function getPromptText() {
             bullets.push('a measure tool');
         }
     }
-    // Scale control bullet
+    
     if (document.getElementById('displayScale')?.checked) {
         bullets.push('a scale control');
     }
-    // Permalink bullet (for OpenLayers)
+    
     if (permalinkText) {
         bullets.push(permalinkText);
     }
-    let prompt = `Generate the code for a ${lib} map with an XYZ template of ${xyz} centered at ${center} at zoom level ${zoom} using ${base} as the base layer.`;
+    
+    let prompt = `Generate the code for a ${lib} map with an XYZ template of ${xyz} with a layer name of "${layerName}" centered at ${center} at zoom level ${zoom} using ${base} as the base layer.`;
     if (bullets.length) {
         prompt += `\n\nPlease create the application with:\n`;
         prompt += bullets.map(b => `* ${b}`).join('\n');
@@ -539,4 +559,20 @@ function handleHash() {
 // Initial setup for existing elements like the ID input
 document.getElementById('id').addEventListener('input', function() {
     getLayers(this.value.trim(), null); // Pass null for layerTitleFromHash
+});
+
+// Add layer name input change event handler
+if (layerNameInput) {
+    layerNameInput.addEventListener('input', updatePrompt);
+}
+
+// Ensure initial prompt is updated
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the layer name input if needed
+    if (layerNameInput && !layerNameInput.value && aiSelectedLayerData.layerName) {
+        layerNameInput.value = aiSelectedLayerData.layerName;
+    }
+    
+    // Update the prompt when the page loads
+    updatePrompt();
 });

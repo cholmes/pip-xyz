@@ -462,3 +462,19 @@ body {
     font-size: 1.08em;
     letter-spacing: 0.01em;
 }
+.layer-name-input {
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #222;
+    font-size: 1em;
+    width: 150px;
+    transition: all 0.2s ease;
+}
+
+.layer-name-input:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
