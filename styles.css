@@ -454,3 +454,11 @@ body {
     color: #1d4ed8;
     text-decoration: underline;
 }
+.control-options-label {
+    font-weight: 600;
+    color: #2563eb;
+    margin-bottom: 8px;
+    margin-top: 2px;
+    font-size: 1.08em;
+    letter-spacing: 0.01em;
+}

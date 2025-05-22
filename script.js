@@ -461,6 +461,11 @@ function getPromptText() {
     if (lib === 'Leaflet') {
         prompt += '\n\nGive me code with external resources, but leave out all integrity and crossorigin attributes.';
     }
+    if (base === 'Sentinel-2 Cloudless') {
+        prompt += '\n\nUse https://tiles.maps.eox.at/wmts?layer=s2cloudless-2024_3857&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={z}&TileCol={x}&TileRow={y} as the XYZ url template for the Sentinel-2 Cloudless base layer.';
+        prompt += '\n\nAdd proper attribution to the map and make sure it is visible by default in the bottom corner. Use \'<a href="https://s2maps.eu" target="_blank">Sentinel-2 cloudless</a> by <a href="https://eox.at" target="_blank">EOX IT Services GmbH</a> (Contains modified Copernicus Sentinel data 2024)\' for the attribution.';
+    }
+
     return prompt;
 }
 
