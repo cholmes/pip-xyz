@@ -248,17 +248,47 @@ function calculateCenterAndZoom(layer) {
     const lonMax = parseFloat(upperCorner[0]);
     const latMax = parseFloat(upperCorner[1]);
 
-    const { x: xMin, y: yMin } = lonLatToXY(lonMin, latMin);
-    const { x: xMax, y: yMax } = lonLatToXY(lonMax, latMax);
-
     const lon = (lonMin + lonMax) / 2;
     const lat = (latMin + latMax) / 2;
 
-    const mapWidthInTiles = 1 / (xMax - xMin);
-    const mapHeightInTiles = 1 / (yMax - yMin);
+    // Get map container dimensions
+    const mapContainer = document.getElementById('map');
+    const mapWidth = mapContainer.offsetWidth || 600; // fallback width
+    const mapHeight = mapContainer.offsetHeight || 400; // fallback height
 
-    const tiles = Math.max(mapWidthInTiles, mapHeightInTiles);
-    const zoom = Math.floor(Math.log2(tiles)) + 2;
+    // Calculate the span in degrees
+    const lonSpan = lonMax - lonMin;
+    const latSpan = latMax - latMin;
+
+    // Convert lat span to approximate pixel equivalent at the center latitude
+    // At latitude 0, 1 degree = ~111,320 meters = ~111.32 km
+    // We need to account for latitude distortion using cos(lat)
+    const centerLatRad = (lat * Math.PI) / 180;
+    const metersPerDegreeLon = 111320 * Math.cos(centerLatRad);
+    const metersPerDegreeLat = 111320;
+
+    // Calculate approximate meters
+    const widthInMeters = lonSpan * metersPerDegreeLon;
+    const heightInMeters = latSpan * metersPerDegreeLat;
+
+    // Calculate zoom level needed to fit the bounds
+    // At zoom level z, the number of pixels per meter at the equator is: 2^z * 256 / 40075017
+    // But we need to adjust for latitude
+    const equatorCircumference = 40075017; // meters
+    
+    // Calculate required zoom to fit width and height with some padding
+    const paddingFactor = 0.8; // Use 80% of container to leave some margin
+    const zoomForWidth = Math.log2((mapWidth * paddingFactor * equatorCircumference) / (widthInMeters * 256));
+    const zoomForHeight = Math.log2((mapHeight * paddingFactor * equatorCircumference) / (heightInMeters * 256));
+    
+    // Use the minimum zoom level to ensure both dimensions fit
+    let zoom = Math.min(zoomForWidth, zoomForHeight);
+    
+    // Adjust for latitude distortion
+    zoom = zoom + Math.log2(Math.cos(centerLatRad));
+    
+    // Clamp zoom to reasonable bounds and round down
+    zoom = Math.max(1, Math.min(18, Math.floor(zoom)));
 
     return { lon, lat, zoom };
 }
