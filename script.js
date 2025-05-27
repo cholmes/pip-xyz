@@ -13,6 +13,8 @@ function toggleInfo() {
 let baseUrl = "https://services.sentinel-hub.com/ogc/wmts/";
 let map = null;
 let xyzLayer = null;
+let lastErrorZoomLevel = null; // Track zoom level for error message display
+let errorUpdateTimeout = null; // Prevent spam from multiple tiles
 
 // AI Code Generation Prompt Builder logic
 const mapLibrarySelect = document.getElementById('mapLibrary');
@@ -308,10 +310,45 @@ function initMap(center, zoom, xyzUrl) {
         })
     });
     
-    // Create XYZ layer from the provided URL
+    // Create XYZ layer from the provided URL with error handling
     xyzLayer = new ol.layer.Tile({
         source: new ol.source.XYZ({
-            url: xyzUrl
+            url: xyzUrl,
+            tileLoadFunction: function(tile, src) {
+                const img = tile.getImage();
+                img.onload = function() {
+                    // Tile loaded successfully - clear any error message and reset tracking
+                    hideResolutionError();
+                    lastErrorZoomLevel = null;
+                };
+                img.onerror = function() {
+                    // Check if this is a resolution error
+                    fetch(src)
+                        .then(response => response.text())
+                        .then(text => {
+                            if (text.includes('meters per pixel exceeds the limit')) {
+                                const currentZoom = map.getView().getZoom();
+                                const currentZoomLevel = Math.floor(currentZoom);
+                                
+                                // Clear any existing timeout to prevent spam
+                                if (errorUpdateTimeout) {
+                                    clearTimeout(errorUpdateTimeout);
+                                }
+                                
+                                // Update error message after a brief delay to prevent multiple updates
+                                errorUpdateTimeout = setTimeout(() => {
+                                    showResolutionError(text, currentZoom);
+                                    lastErrorZoomLevel = currentZoomLevel;
+                                    errorUpdateTimeout = null;
+                                }, 150);
+                            }
+                        })
+                        .catch(() => {
+                            // If we can't fetch the error details, just ignore
+                        });
+                };
+                img.src = src;
+            }
         })
     });
     
@@ -578,3 +615,55 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update the prompt when the page loads
     updatePrompt();
 });
+
+function showResolutionError(errorText, zoomLevel) {
+    // Parse the error message to extract the requested and limit values
+    const requestMatch = errorText.match(/Your request of ([\d.]+) meters per pixel/);
+    const limitMatch = errorText.match(/exceeds the limit ([\d.]+) meters per pixel/);
+    
+    const requestedResolution = requestMatch ? requestMatch[1] : 'unknown';
+    const limitResolution = limitMatch ? limitMatch[1] : 'unknown';
+    
+    // Create or update error message element
+    let errorDiv = document.getElementById('resolutionError');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'resolutionError';
+        errorDiv.className = 'resolution-error-message';
+        document.getElementById('map').appendChild(errorDiv);
+    }
+    
+    errorDiv.innerHTML = `
+        <div class="error-content">
+            <i class="fa-solid fa-exclamation-triangle"></i>
+            <div class="error-text">
+                <strong>Zoom in to view layer</strong><br>
+                Your request of ${requestedResolution} meters per pixel exceeds the limit of ${limitResolution} meters per pixel. Please zoom in to a higher detail level.
+            </div>
+            <div class="error-actions">
+                <button onclick="zoomInFromError()" class="zoom-in-btn" title="Zoom in one level">
+                    <i class="fa-solid fa-magnifying-glass-plus"></i>
+                </button>
+                <button onclick="hideResolutionError()" class="close-error" title="Close">×</button>
+            </div>
+        </div>
+    `;
+    errorDiv.style.display = 'block';
+}
+
+function zoomInFromError() {
+    if (map) {
+        const currentZoom = map.getView().getZoom();
+        map.getView().animate({
+            zoom: currentZoom + 1,
+            duration: 300
+        });
+    }
+}
+
+function hideResolutionError() {
+    const errorDiv = document.getElementById('resolutionError');
+    if (errorDiv) {
+        errorDiv.style.display = 'none';
+    }
+}
