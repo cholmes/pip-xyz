@@ -438,6 +438,7 @@ function updateLibraryOptions() {
     // Layer selector and opacity control for all libraries
     html += `<label><input type="checkbox" id="layerSelector" checked> Layer selector</label> `;
     html += `<label><input type="checkbox" id="opacityControl"> Opacity control</label> `;
+    html += `<label><input type="checkbox" id="zoomUI" checked> Zoom UI</label> `;
     
     if (lib === 'OpenLayers') {
         html += `<label><input type="checkbox" id="olPermalink" checked> Shareable URL</label> `;
@@ -465,6 +466,7 @@ function updateLibraryOptions() {
     opacityControl.addEventListener('change', updatePrompt);
     
     // Add change listeners for other checkboxes
+    document.getElementById('zoomUI')?.addEventListener('change', updatePrompt);
     document.getElementById('olPermalink')?.addEventListener('change', updatePrompt);
     document.getElementById('displayScale')?.addEventListener('change', updatePrompt);
     document.getElementById('ml3d')?.addEventListener('change', updatePrompt);
@@ -491,6 +493,7 @@ function getPromptText() {
     let permalinkText = '';
     const layerSelector = document.getElementById('layerSelector');
     const opacityControl = document.getElementById('opacityControl');
+    const zoomUI = document.getElementById('zoomUI');
     
     if (lib === 'OpenLayers') {
         if (document.getElementById('olPermalink')?.checked) permalinkText = 'with an auto-updating url hash for the map state';
@@ -506,6 +509,12 @@ function getPromptText() {
         }
     } else {
         bullets.push('no layer selector');
+    }
+    
+    if (zoomUI && zoomUI.checked) {
+        bullets.push('with a standard zoom control in the UI');
+    } else {
+        bullets.push('no zoom control in the UI');
     }
     
     if (document.getElementById('displayScale')?.checked) {
@@ -532,6 +541,9 @@ function getPromptText() {
     }
     if (lib === 'Leaflet') {
         prompt += '\n\nGive me code with external resources, but leave out all integrity and crossorigin attributes.';
+        if (layerSelector && layerSelector.checked) {
+            prompt += '\nThe layer selector should have the overlay layer on by default.';
+        }
     }
     return prompt;
 }
