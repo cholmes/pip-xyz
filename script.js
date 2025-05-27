@@ -433,7 +433,7 @@ function updateLibraryOptions() {
     
     if (lib === 'OpenLayers') {
         html += `<label><input type="checkbox" id="olPermalink" checked> Shareable URL</label> `;
-        html += `<label><input type="checkbox" id="displayScale"> Scale control</label> `;
+        html += `<label><input type="checkbox" id="displayScale"> Scale</label> `;
     } else if (lib === 'MapLibre') {
         html += `<label><input type="checkbox" id="ml3d"> 3D</label>`;
     } else {
@@ -501,7 +501,7 @@ function getPromptText() {
     }
     
     if (document.getElementById('displayScale')?.checked) {
-        bullets.push('a scale control');
+        bullets.push('a scale');
     }
     
     if (permalinkText) {
