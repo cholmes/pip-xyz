@@ -16,6 +16,59 @@ function toggleAIInfo() {
     aiInfoContent.style.display = isVisible ? 'none' : 'block';
 }
 
+function toggleNewUserInfo() {
+    const newUserInfo = document.getElementById('newUserInfo');
+    const isVisible = window.getComputedStyle(newUserInfo).display !== 'none';
+    newUserInfo.style.display = isVisible ? 'none' : 'block';
+}
+
+function updateEditorOptions() {
+    const selectedOS = document.querySelector('input[name="operatingSystem"]:checked');
+    const editorOptions = document.getElementById('editorOptions');
+    
+    if (!selectedOS || !editorOptions) return;
+    
+    const osName = selectedOS.value;
+    let editors = [];
+    
+    switch (osName) {
+        case 'Windows':
+            editors = [
+                { value: 'Notepad', label: 'Notepad (built-in)' },
+                { value: 'Notepad++', label: 'Notepad++' },
+                { value: 'Sublime Text', label: 'Sublime Text' },
+                { value: 'VS Code', label: 'VS Code' }
+            ];
+            break;
+        case 'Mac OS/X':
+            editors = [
+                { value: 'TextEdit', label: 'TextEdit (built-in)' },
+                { value: 'Sublime Text', label: 'Sublime Text' },
+                { value: 'BBEdit', label: 'BBEdit' },
+                { value: 'VS Code', label: 'VS Code' }
+            ];
+            break;
+        case 'Linux':
+            editors = [
+                { value: 'Gedit', label: 'Gedit' },
+                { value: 'Nano', label: 'Nano (terminal)' },
+                { value: 'Kate', label: 'Kate' },
+                { value: 'VS Code', label: 'VS Code' }
+            ];
+            break;
+    }
+    
+    editorOptions.innerHTML = editors.map((editor, index) => 
+        `<label><input type="radio" name="textEditor" value="${editor.value}" ${index === 0 ? 'checked' : ''}> ${editor.label}</label>`
+    ).join(' ');
+    
+    // Add event listeners to new radio buttons
+    const editorRadios = document.querySelectorAll('input[name="textEditor"]');
+    editorRadios.forEach(radio => {
+        radio.addEventListener('change', updatePrompt);
+    });
+}
+
 let baseUrl = "https://services.sentinel-hub.com/ogc/wmts/";
 let map = null;
 let xyzLayer = null;
@@ -237,6 +290,31 @@ function selectLayer(layerDiv, layer, currentConfigId) {
     
     const encodedLayerTitle = encodeURIComponent(title);
     window.history.replaceState(null, '', `#id/${currentConfigId}/layer/${encodedLayerTitle}`);
+    
+    // Add event listeners for beginner options
+    const newToWebMapsCheckbox = document.getElementById('newToWebMaps');
+    const osSelection = document.getElementById('osSelection');
+    const editorSelection = document.getElementById('editorSelection');
+    const osRadios = document.querySelectorAll('input[name="operatingSystem"]');
+    
+    if (newToWebMapsCheckbox) {
+        newToWebMapsCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            osSelection.style.display = isChecked ? 'block' : 'none';
+            editorSelection.style.display = isChecked ? 'block' : 'none';
+            if (isChecked) {
+                updateEditorOptions();
+            }
+            updatePrompt();
+        });
+    }
+    
+    osRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            updateEditorOptions();
+            updatePrompt();
+        });
+    });
     
     updatePrompt();
     // Small delay to ensure the element is visible before calculating height
@@ -525,7 +603,7 @@ function getPromptText() {
         bullets.push(permalinkText);
     }
     
-    let prompt = `Generate the code for a ${lib} map with an XYZ template of ${xyz} with a layer name of "${layerName}" centered at ${center} at zoom level ${zoom} using ${base} as the base layer.`;
+    let prompt = `Generate the code for a ${lib} map with an XYZ template of ${xyz} with a layer name of "${layerName}" centered at ${center} at zoom level ${zoom} overlaid on ${base} as the base layer.`;
     if (bullets.length) {
         prompt += `\n\nPlease create the application with:\n`;
         prompt += bullets.map(b => `* ${b}`).join('\n');
@@ -545,6 +623,17 @@ function getPromptText() {
             prompt += '\nThe layer selector should have the overlay layer on by default.';
         }
     }
+    
+    // Add beginner instructions if checkbox is checked
+    const newToWebMapsCheckbox = document.getElementById('newToWebMaps');
+    if (newToWebMapsCheckbox && newToWebMapsCheckbox.checked) {
+        const selectedOS = document.querySelector('input[name="operatingSystem"]:checked');
+        const selectedEditor = document.querySelector('input[name="textEditor"]:checked');
+        const osName = selectedOS ? selectedOS.value : 'Windows';
+        const editorName = selectedEditor ? selectedEditor.value : 'VS Code';
+        prompt += `\n\nInclude step-by-step instructions for a new user to display the map in the browser. They are on ${osName}, and have never written code to display web maps before, so suggest which tools to use, exactly how to get it displayed, and how to debug it if it doesn't work immediately. They will be using ${editorName} as their text editor.`;
+    }
+    
     return prompt;
 }
 

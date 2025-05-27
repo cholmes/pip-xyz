@@ -607,10 +607,72 @@ body {
 @keyframes slideIn {
     from {
         opacity: 0;
-        transform: translate(-50%, -60%);
+        transform: translateY(-5px);
     }
     to {
         opacity: 1;
-        transform: translate(-50%, -50%);
+        transform: translateY(0);
     }
+}
+
+/* Beginner section styling */
+.beginner-section {
+    margin-top: 12px;
+    margin-bottom: 16px;
+}
+
+.beginner-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.beginner-checkbox label {
+    font-weight: 500;
+    color: #475569;
+    font-size: 1.05em;
+}
+
+.os-selection {
+    margin-bottom: 12px;
+    padding: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.os-label, .editor-label {
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 8px;
+    font-size: 1.05em;
+}
+
+.os-options, .editor-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+}
+
+.os-options label, .editor-options label {
+    font-weight: 500;
+    color: #475569;
+    font-size: 1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.editor-selection {
+    padding: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.beginner-section input[type="radio"], .beginner-section input[type="checkbox"] {
+    margin: 0;
+    margin-right: 6px;
 }
