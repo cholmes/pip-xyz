@@ -239,6 +239,8 @@ function selectLayer(layerDiv, layer, currentConfigId) {
     window.history.replaceState(null, '', `#id/${currentConfigId}/layer/${encodedLayerTitle}`);
     
     updatePrompt();
+    // Small delay to ensure the element is visible before calculating height
+    setTimeout(autoResizeTextarea, 10);
 }
 
 function lonLatToXY(lon, lat) {
@@ -536,6 +538,17 @@ function getPromptText() {
 
 function updatePrompt() {
     aiPromptText.value = getPromptText();
+    autoResizeTextarea();
+}
+
+function autoResizeTextarea() {
+    const textarea = document.getElementById('aiPromptText');
+    if (textarea) {
+        // Reset height to auto to get the scroll height
+        textarea.style.height = 'auto';
+        // Set height to scroll height plus some padding
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
 }
 
 mapLibrarySelect.addEventListener('change', () => {
@@ -620,6 +633,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update the prompt when the page loads
     updatePrompt();
+    // Auto-resize in case the textarea is visible
+    autoResizeTextarea();
 });
 
 function showResolutionError(errorText, zoomLevel) {
