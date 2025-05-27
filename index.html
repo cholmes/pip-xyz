@@ -44,6 +44,14 @@
         <div id="generatedUrls" class="generated-urls"></div>
         <div id="aiPromptBuilder" class="ai-prompt-builder" style="display:none;">
             <h2>AI Code Generation Prompt Builder</h2>
+            <div class="info-section">
+                <button class="info-toggle" onclick="toggleAIInfo()" title="About AI Prompt Builder"><i class="fa-solid fa-circle-info"></i> About</button>
+                <div class="info-content" id="aiInfoContent" style="display:none;">
+                    <p>This tool provides a starting point to prompt AI coding tools to create web map applications with your selected layer, properly centered and zoomed in. Just select what options you want for your map library, basemap and controls and then copy the text box and paste it into the chat window of your preferred tool.</p> 
+                    <p>Most good AI coding tools will likely generate a working map for you, and guide you on how to use it and publish it. It's been tested with ChatGPT (mostly 4o) and Cursor (mostly Claude 3.5), but other tools should work too. If it doesn't give you a working map the first time then try a more powerful model (ie o3, Claude 3.7/4 in Thinking mode, gemini 2.5 pro MAX, etc).</p>
+                    <p>Feel free to customize the prompt before adding it in, though it's usually better to first get something working and then iterate with smaller additions. View this as a jumping off point - after the map is working you can then add more features and customize it to your needs.</p>
+                </div>
+            </div>
             <div class="ai-options">
                 <div class="ai-option-group">
                     <label for="mapLibrary">Map library:</label>

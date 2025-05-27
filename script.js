@@ -10,6 +10,12 @@ function toggleInfo() {
     infoContent.style.display = isVisible ? 'none' : 'block';
 }
 
+function toggleAIInfo() {
+    const aiInfoContent = document.getElementById('aiInfoContent');
+    const isVisible = window.getComputedStyle(aiInfoContent).display !== 'none';
+    aiInfoContent.style.display = isVisible ? 'none' : 'block';
+}
+
 let baseUrl = "https://services.sentinel-hub.com/ogc/wmts/";
 let map = null;
 let xyzLayer = null;
